@@ -1,0 +1,9 @@
+{
+    "id" : "Climbables",
+    "version" : "0.1.0-SNAPSHOT",
+    "author" : "",
+    "displayName" : "Climbables",
+    "description" : "",
+    "dependencies" : [],
+    "serverSideOnly" : false
+}
