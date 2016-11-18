@@ -15,11 +15,8 @@
  */
 
 {
-    "climbable": true,
     "penetrable": false,
-    "shape": "Climbables:pole",
     "translucent": true,
-
     "entity": {
         "prefab": "Climbables:ScaffoldSupport"
     }

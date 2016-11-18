@@ -24,7 +24,10 @@ import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterMode;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.logic.common.ActivateEvent;
+import org.terasology.logic.health.DoDestroyEvent;
+import org.terasology.logic.health.EngineDamageTypes;
 import org.terasology.logic.inventory.ItemComponent;
+import org.terasology.logic.location.LocationComponent;
 import org.terasology.math.ChunkMath;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
@@ -35,6 +38,7 @@ import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockComponent;
+import org.terasology.world.block.BlockManager;
 import org.terasology.world.block.entity.placement.PlaceBlocks;
 import org.terasology.world.block.family.BlockFamily;
 import org.terasology.world.block.items.BlockItemComponent;
@@ -56,6 +60,15 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
 
     @In
     private NetworkSystem networkSystem;
+
+    @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
+    public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent) {
+        if (clamberComponent.child !=null )
+        {
+            ClamberComponent clamberComponent1 = entity.getComponent(ClamberComponent.class);
+            clamberComponent.child.send(new DoDestroyEvent(entity, entity, EngineDamageTypes.PHYSICAL.get()));
+        }
+    }
 
     @ReceiveEvent(components = {BlockItemComponent.class, ItemComponent.class}, priority = EventPriority.PRIORITY_HIGH)
     public void onPlaceBlock(ActivateEvent event, EntityRef item) {
@@ -120,7 +133,7 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
             return;
         }
 
-        if (blockComponent.getBlock().isClimbable() && canPlaceClimbly && climbyComponent != null) {
+        if (canPlaceClimbly && climbyComponent != null) {
 
             if (climbyComponent.placingMode != clamberComponent.placingMode)
             {
@@ -143,18 +156,16 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
             while(clamberComponent.placingMode == newBlockClamberComponent.placingMode);
 
             if (newBlock.isReplacementAllowed()) {
-
-                ClamberComponent newClamberComponent = new ClamberComponent();
-                newClamberComponent.placingMode = climbyComponent.placingMode;
-                newClamberComponent.support = true;
-                blockEntity.addOrSaveComponent(newClamberComponent);
-
                 PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, block, event.getInstigator());
                 worldProvider.getWorldEntity().send(placeBlocks);
 
                 if (!placeBlocks.isConsumed()) {
                     item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
                 }
+
+                clamberComponent.child = block.getEntity();
+                event.getTarget().saveComponent(clamberComponent);
+
                 event.getInstigator().send(new PlaySoundEvent(Assets.getSound("engine:PlaceBlock").get(), 0.5f));
             }
         }

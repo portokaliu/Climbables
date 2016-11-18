@@ -1,7 +1,7 @@
 {
-    "parent": "engine:iconItem",
     "clamber": {
         "placingMode": ROPING,
-        "support": false
+        "support": false,
+        "child": "null"
     }
 }

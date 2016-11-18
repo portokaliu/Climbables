@@ -15,6 +15,7 @@
  */
 
 import org.terasology.entitySystem.Component;
+import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 
@@ -25,6 +26,7 @@ public class ClamberComponent implements Component {
 
     public PlacingMode placingMode = PlacingMode.NORMAL;
     public boolean support = false;
+    public EntityRef child = null;
 
     public Vector3i getPlacingModeDirection()
     {
