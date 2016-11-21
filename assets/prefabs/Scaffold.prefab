@@ -1,7 +1,6 @@
 {
     "clamber": {
         "placingMode": "STACKING",
-        "support": false,
-        "child": "null"
+        "support": false
     }
 }

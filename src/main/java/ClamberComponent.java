@@ -18,6 +18,7 @@ import org.terasology.entitySystem.Component;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
+import org.terasology.world.block.Block;
 
 /**
  * Created by rmincu on 10/11/2016.
@@ -26,7 +27,7 @@ public class ClamberComponent implements Component {
 
     public PlacingMode placingMode = PlacingMode.NORMAL;
     public boolean support = false;
-    public EntityRef child = null;
+    public int maxPlacementDistance = 3;
 
     public Vector3i getPlacingModeDirection()
     {

@@ -2,6 +2,6 @@
     "clamber": {
         "placingMode": "STACKING",
         "support": true,
-        "child": "null"
+        "maxPlacementDistance": 5
     }
 }

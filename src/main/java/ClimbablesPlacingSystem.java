@@ -19,32 +19,28 @@ import org.terasology.audio.events.PlaySoundEvent;
 import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.entitySystem.event.EventPriority;
 import org.terasology.entitySystem.event.ReceiveEvent;
-import org.terasology.entitySystem.prefab.Prefab;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterMode;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.logic.common.ActivateEvent;
 import org.terasology.logic.health.DoDestroyEvent;
 import org.terasology.logic.health.EngineDamageTypes;
+import org.terasology.logic.inventory.InventoryManager;
+import org.terasology.logic.inventory.InventoryUtils;
 import org.terasology.logic.inventory.ItemComponent;
-import org.terasology.logic.location.LocationComponent;
 import org.terasology.math.ChunkMath;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.network.NetworkSystem;
 import org.terasology.registry.In;
 import org.terasology.utilities.Assets;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
 import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockComponent;
-import org.terasology.world.block.BlockManager;
 import org.terasology.world.block.entity.placement.PlaceBlocks;
 import org.terasology.world.block.family.BlockFamily;
 import org.terasology.world.block.items.BlockItemComponent;
 import org.terasology.world.block.items.OnBlockItemPlaced;
-
-import java.util.Optional;
 
 @RegisterSystem(RegisterMode.AUTHORITY)
 public class ClimbablesPlacingSystem extends BaseComponentSystem {
@@ -57,116 +53,103 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
 
     @In
     private AudioManager audioManager;
-
     @In
-    private NetworkSystem networkSystem;
+    private InventoryManager inventoryManager;
 
     @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
-    public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent) {
-        if (clamberComponent.child !=null )
+    public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent, BlockComponent blockComponent) {
+        Vector3i nextBlockPos = new Vector3i( blockComponent.getPosition() );
+        nextBlockPos.add(clamberComponent.getPlacingModeDirection());
+
+        EntityRef nextBlockEntity = blockEntityRegistry.getBlockEntityAt(nextBlockPos);
+        ClamberComponent nextClamberComponent = nextBlockEntity.getComponent(ClamberComponent.class);
+        if (nextClamberComponent != null && clamberComponent.placingMode == nextClamberComponent.placingMode && !nextClamberComponent.support)
         {
-            ClamberComponent clamberComponent1 = entity.getComponent(ClamberComponent.class);
-            clamberComponent.child.send(new DoDestroyEvent(entity, entity, EngineDamageTypes.PHYSICAL.get()));
+            nextBlockEntity.send(new DoDestroyEvent(entity, entity, EngineDamageTypes.PHYSICAL.get()));
         }
     }
 
     @ReceiveEvent(components = {BlockItemComponent.class, ItemComponent.class}, priority = EventPriority.PRIORITY_HIGH)
     public void onPlaceBlock(ActivateEvent event, EntityRef item) {
-        if (!event.getTarget().exists()) {
+
+        EntityRef targetEntity = event.getTarget();
+
+        if (!targetEntity.exists()) {
             event.consume();
             return;
         }
 
         BlockItemComponent blockItem = item.getComponent(BlockItemComponent.class);
         BlockFamily type = blockItem.blockFamily;
-        Side clamberSide = Side.TOP;
+        //Side clamberSide = Side.TOP;
         Side secondaryDirection = ChunkMath.getSecondaryPlacementDirection(event.getDirection(), event.getHitNormal());
 
-        BlockComponent blockComponent = event.getTarget().getComponent(BlockComponent.class);
+        BlockComponent blockComponent = targetEntity.getComponent(BlockComponent.class);
         if (blockComponent == null) {
             // If there is no block there (i.e. it's a BlockGroup, we don't allow placing block, try somewhere else)
             event.consume();
             return;
         }
 
-        boolean canPlaceClimbly = false;
         Vector3i placementDirection = Vector3i.zero();
-        ClamberComponent clamberComponent = event.getTarget().getComponent(ClamberComponent.class);
-        if (clamberComponent != null)
-        {
-            if (clamberComponent.support) {
-                canPlaceClimbly = true;
-                placementDirection = clamberComponent.getPlacingModeDirection();
-            }
-        }
+        ClamberComponent targetClamberComponent = targetEntity.getComponent(ClamberComponent.class);
 
         Vector3i climbablePlacementPos = new Vector3i(blockComponent.getPosition());
-
-        Block block = type.getBlockForPlacement(worldProvider, blockEntityRegistry, climbablePlacementPos, Side.LEFT, secondaryDirection);
-        if (block == null)
-        {
+        Block blockToPlace = type.getBlockForPlacement(worldProvider, blockEntityRegistry, climbablePlacementPos, Side.LEFT, secondaryDirection);
+        if (blockToPlace == null){
             event.consume();
             return;
         }
 
-        EntityRef blockEntity = block.getEntity();
-        Prefab blockPrefab = block.getPrefab().get();
-        ClamberComponent climbyComponent = null;
-        if (blockPrefab != null) {
-            climbyComponent = blockPrefab.getComponent(ClamberComponent.class);
-        }
-
-        if (climbyComponent != null) {
-            if (!climbyComponent.support) {
-                if (!canPlaceClimbly) {
-                    event.consume();
-                    return;
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-        else
-        {
-            return;
-        }
-
-        if (canPlaceClimbly && climbyComponent != null) {
-
-            if (climbyComponent.placingMode != clamberComponent.placingMode)
-            {
+        ClamberComponent placingClamberComponent = blockToPlace.getEntity().getComponent(ClamberComponent.class);
+        if (placingClamberComponent != null && !placingClamberComponent.support) {
+            if (targetClamberComponent == null) {
                 event.consume();
                 return;
             }
-
-            Block newBlock = null;
-            ClamberComponent newBlockClamberComponent = null;
-            do
-            {
-                climbablePlacementPos.add(placementDirection);
-                newBlock = worldProvider.getBlock(climbablePlacementPos);
-                newBlockClamberComponent = newBlock.getEntity().getComponent(ClamberComponent.class);
-                if (newBlockClamberComponent == null)
-                {
-                    break;
-                }
+            else{
+                placementDirection = placingClamberComponent.getPlacingModeDirection();
             }
-            while(clamberComponent.placingMode == newBlockClamberComponent.placingMode);
+        }
+        else{
+            return;
+        }
 
-            if (newBlock.isReplacementAllowed()) {
-                PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, block, event.getInstigator());
-                worldProvider.getWorldEntity().send(placeBlocks);
+        if (placingClamberComponent.placingMode != targetClamberComponent.placingMode){
+            event.consume();
+            return;
+        }
 
-                if (!placeBlocks.isConsumed()) {
-                    item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
-                }
+        Block newBlock = null;
+        ClamberComponent newBlockClamberComponent = null;
+        int placementDistance = 0;
+        do{
+            placementDistance++;
+            climbablePlacementPos.add(placementDirection);
+            newBlock = worldProvider.getBlock(climbablePlacementPos);
+            newBlockClamberComponent = newBlock.getEntity().getComponent(ClamberComponent.class);
+            if (newBlockClamberComponent == null){
+                break;
+            }
+        }
+        while(targetClamberComponent.placingMode == newBlockClamberComponent.placingMode && placementDistance < targetClamberComponent.maxPlacementDistance);
 
-                clamberComponent.child = block.getEntity();
-                event.getTarget().saveComponent(clamberComponent);
+        if (newBlock.isReplacementAllowed()) {
+            PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, blockToPlace, event.getInstigator());
+            worldProvider.getWorldEntity().send(placeBlocks);
 
-                event.getInstigator().send(new PlaySoundEvent(Assets.getSound("engine:PlaceBlock").get(), 0.5f));
+            if (!placeBlocks.isConsumed()) {
+                item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
+            }
+
+            event.getInstigator().send(new PlaySoundEvent(Assets.getSound("engine:PlaceBlock").get(), 0.5f));
+
+            // ItemAuthoritySystem should be using another event instead of catching the same one as the BlockItemSystem.
+            // OnBlockItemPlaced is a good replacement.
+            ItemComponent itemComp = item.getComponent(ItemComponent.class);
+            if (itemComp.consumedOnUse) {
+                int slot = InventoryUtils.getSlotWithItem(event.getInstigator(), item);
+                inventoryManager.removeItem(event.getInstigator(), event.getInstigator(), slot, true, 1);
             }
         }
 
