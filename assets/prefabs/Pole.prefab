@@ -1,6 +1,6 @@
 {
     "clamber": {
-        "placingMode": ROPING,
-        "support": false,
+        "placingMode": "ROPING",
+        "support": false
     }
 }
