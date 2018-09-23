@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MovingBlocks
+ * Copyright 2018 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.terasology.climbables;
 
 import org.terasology.audio.AudioManager;
 import org.terasology.audio.events.PlaySoundEvent;
@@ -58,13 +60,12 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
 
     @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
     public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent, BlockComponent blockComponent) {
-        Vector3i nextBlockPos = new Vector3i( blockComponent.getPosition() );
+        Vector3i nextBlockPos = new Vector3i(blockComponent.getPosition());
         nextBlockPos.add(clamberComponent.getPlacingModeDirection());
 
         EntityRef nextBlockEntity = blockEntityRegistry.getBlockEntityAt(nextBlockPos);
         ClamberComponent nextClamberComponent = nextBlockEntity.getComponent(ClamberComponent.class);
-        if (nextClamberComponent != null && clamberComponent.placingMode == nextClamberComponent.placingMode && !nextClamberComponent.support)
-        {
+        if (nextClamberComponent != null && clamberComponent.placingMode == nextClamberComponent.placingMode && !nextClamberComponent.support) {
             nextBlockEntity.send(new DoDestroyEvent(entity, entity, EngineDamageTypes.PHYSICAL.get()));
         }
     }
@@ -95,8 +96,8 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
         ClamberComponent targetClamberComponent = targetEntity.getComponent(ClamberComponent.class);
 
         Vector3i climbablePlacementPos = new Vector3i(blockComponent.getPosition());
-        Block blockToPlace = type.getBlockForPlacement(worldProvider, blockEntityRegistry, climbablePlacementPos, Side.LEFT, secondaryDirection);
-        if (blockToPlace == null){
+        Block blockToPlace = type.getBlockForPlacement(climbablePlacementPos, Side.LEFT, secondaryDirection);
+        if (blockToPlace == null) {
             event.consume();
             return;
         }
@@ -106,16 +107,14 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
             if (targetClamberComponent == null) {
                 event.consume();
                 return;
-            }
-            else{
+            } else {
                 placementDirection = placingClamberComponent.getPlacingModeDirection();
             }
-        }
-        else{
+        } else {
             return;
         }
 
-        if (placingClamberComponent.placingMode != targetClamberComponent.placingMode){
+        if (placingClamberComponent.placingMode != targetClamberComponent.placingMode) {
             event.consume();
             return;
         }
@@ -123,16 +122,16 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
         Block newBlock = null;
         ClamberComponent newBlockClamberComponent = null;
         int placementDistance = 0;
-        do{
+        do {
             placementDistance++;
             climbablePlacementPos.add(placementDirection);
             newBlock = worldProvider.getBlock(climbablePlacementPos);
             newBlockClamberComponent = newBlock.getEntity().getComponent(ClamberComponent.class);
-            if (newBlockClamberComponent == null){
+            if (newBlockClamberComponent == null) {
                 break;
             }
         }
-        while(targetClamberComponent.placingMode == newBlockClamberComponent.placingMode && placementDistance < targetClamberComponent.maxPlacementDistance);
+        while (targetClamberComponent.placingMode == newBlockClamberComponent.placingMode && placementDistance < targetClamberComponent.maxPlacementDistance);
 
         if (newBlock.isReplacementAllowed()) {
             PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, blockToPlace, event.getInstigator());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MovingBlocks
+ * Copyright 2018 MovingBlocks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.terasology.climbables;
 
 import org.terasology.entitySystem.Component;
-import org.terasology.entitySystem.entity.EntityRef;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.world.block.Block;
 
-/**
- * Created by rmincu on 10/11/2016.
- */
 public class ClamberComponent implements Component {
 
     public PlacingMode placingMode = PlacingMode.NORMAL;
     public boolean support = false;
     public int maxPlacementDistance = 3;
 
-    public Vector3i getPlacingModeDirection()
-    {
-        switch (this.placingMode)
-        {
-            case ROPING: return Side.BOTTOM.getVector3i();
-            case STACKING: return Side.TOP.getVector3i();
-            case NORMAL: return Vector3i.zero();
+    public Vector3i getPlacingModeDirection() {
+        switch (this.placingMode) {
+            case ROPING:
+                return Side.BOTTOM.getVector3i();
+            case STACKING:
+                return Side.TOP.getVector3i();
+            case NORMAL:
+                return Vector3i.zero();
         }
         return Vector3i.zero();
     }
