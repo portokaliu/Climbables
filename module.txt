@@ -1,11 +1,10 @@
 {
     "id" : "Climbables",
-    "version" : "0.2.0-SNAPSHOT",
+    "version" : "0.3.0",
     "author" : "anthodeus",
     "displayName" : "Climbables",
     "description" : "This module creates additional climbable blocks and placement modes for them.",
-    "dependencies" : [
-        {"id" : "Core", "minVersion" : "3.0.0"}
-    ],
-    "serverSideOnly" : false
+    "dependencies" : [],
+    "serverSideOnly" : false,
+    "isAsset": true
 }
