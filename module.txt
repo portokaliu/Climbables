@@ -4,7 +4,9 @@
     "author" : "anthodeus",
     "displayName" : "Climbables",
     "description" : "This module creates additional climbable blocks and placement modes for them.",
-    "dependencies" : [],
+    "dependencies" : [
+        {"id" : "Inventory", "minVersion" : "1.1.0"}
+    ],
     "serverSideOnly" : false,
     "isAsset": true
 }
