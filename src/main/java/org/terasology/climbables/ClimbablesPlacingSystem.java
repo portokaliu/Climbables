@@ -1,48 +1,35 @@
-/*
- * Copyright 2018 MovingBlocks
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2020 The Terasology Foundation
+// SPDX-License-Identifier: Apache-2.0
 
 package org.terasology.climbables;
 
-import org.terasology.audio.AudioManager;
-import org.terasology.audio.events.PlaySoundEvent;
-import org.terasology.entitySystem.entity.EntityRef;
-import org.terasology.entitySystem.event.EventPriority;
-import org.terasology.entitySystem.event.ReceiveEvent;
-import org.terasology.entitySystem.systems.BaseComponentSystem;
-import org.terasology.entitySystem.systems.RegisterMode;
-import org.terasology.entitySystem.systems.RegisterSystem;
-import org.terasology.logic.common.ActivateEvent;
-import org.terasology.logic.health.DoDestroyEvent;
-import org.terasology.logic.health.EngineDamageTypes;
-import org.terasology.logic.inventory.InventoryManager;
-import org.terasology.logic.inventory.InventoryUtils;
-import org.terasology.logic.inventory.ItemComponent;
-import org.terasology.math.ChunkMath;
-import org.terasology.math.Side;
+import org.terasology.engine.audio.AudioManager;
+import org.terasology.engine.audio.events.PlaySoundEvent;
+import org.terasology.engine.entitySystem.entity.EntityRef;
+import org.terasology.engine.entitySystem.event.EventPriority;
+import org.terasology.engine.entitySystem.event.ReceiveEvent;
+import org.terasology.engine.entitySystem.systems.BaseComponentSystem;
+import org.terasology.engine.entitySystem.systems.RegisterMode;
+import org.terasology.engine.entitySystem.systems.RegisterSystem;
+import org.terasology.engine.logic.common.ActivateEvent;
+import org.terasology.engine.logic.destruction.DoDestroyEvent;
+import org.terasology.engine.logic.destruction.EngineDamageTypes;
+import org.terasology.engine.logic.inventory.ItemComponent;
+import org.terasology.engine.math.ChunkMath;
+import org.terasology.engine.math.Side;
+import org.terasology.engine.registry.In;
+import org.terasology.engine.utilities.Assets;
+import org.terasology.engine.world.BlockEntityRegistry;
+import org.terasology.engine.world.WorldProvider;
+import org.terasology.engine.world.block.Block;
+import org.terasology.engine.world.block.BlockComponent;
+import org.terasology.engine.world.block.entity.placement.PlaceBlocks;
+import org.terasology.engine.world.block.family.BlockFamily;
+import org.terasology.engine.world.block.items.BlockItemComponent;
+import org.terasology.engine.world.block.items.OnBlockItemPlaced;
+import org.terasology.inventory.logic.InventoryManager;
+import org.terasology.inventory.logic.InventoryUtils;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.registry.In;
-import org.terasology.utilities.Assets;
-import org.terasology.world.BlockEntityRegistry;
-import org.terasology.world.WorldProvider;
-import org.terasology.world.block.Block;
-import org.terasology.world.block.BlockComponent;
-import org.terasology.world.block.entity.placement.PlaceBlocks;
-import org.terasology.world.block.family.BlockFamily;
-import org.terasology.world.block.items.BlockItemComponent;
-import org.terasology.world.block.items.OnBlockItemPlaced;
 
 @RegisterSystem(RegisterMode.AUTHORITY)
 public class ClimbablesPlacingSystem extends BaseComponentSystem {
@@ -59,7 +46,8 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
     private InventoryManager inventoryManager;
 
     @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
-    public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent, BlockComponent blockComponent) {
+    public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent,
+                            BlockComponent blockComponent) {
         Vector3i nextBlockPos = new Vector3i(blockComponent.getPosition());
         nextBlockPos.add(clamberComponent.getPlacingModeDirection());
 
@@ -138,12 +126,14 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
             worldProvider.getWorldEntity().send(placeBlocks);
 
             if (!placeBlocks.isConsumed()) {
-                item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
+                item.send(new OnBlockItemPlaced(climbablePlacementPos,
+                        blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
             }
 
             event.getInstigator().send(new PlaySoundEvent(Assets.getSound("engine:PlaceBlock").get(), 0.5f));
 
-            // ItemAuthoritySystem should be using another event instead of catching the same one as the BlockItemSystem.
+            // ItemAuthoritySystem should be using another event instead of catching the same one as the 
+            // BlockItemSystem.
             // OnBlockItemPlaced is a good replacement.
             ItemComponent itemComp = item.getComponent(ItemComponent.class);
             if (itemComp.consumedOnUse) {
