@@ -31,6 +31,7 @@ import org.terasology.logic.inventory.InventoryManager;
 import org.terasology.logic.inventory.InventoryUtils;
 import org.terasology.logic.inventory.ItemComponent;
 import org.terasology.math.ChunkMath;
+import org.terasology.math.JomlUtil;
 import org.terasology.math.Side;
 import org.terasology.math.geom.Vector3i;
 import org.terasology.registry.In;
@@ -134,7 +135,7 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
         while (targetClamberComponent.placingMode == newBlockClamberComponent.placingMode && placementDistance < targetClamberComponent.maxPlacementDistance);
 
         if (newBlock.isReplacementAllowed()) {
-            PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, blockToPlace, event.getInstigator());
+            PlaceBlocks placeBlocks = new PlaceBlocks(JomlUtil.from(climbablePlacementPos), blockToPlace, event.getInstigator());
             worldProvider.getWorldEntity().send(placeBlocks);
 
             if (!placeBlocks.isConsumed()) {
