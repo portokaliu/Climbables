@@ -1,13 +1,16 @@
 {
-    "id": "Climbables",
-    "version": "1.0.0",
-    "author": "anthodeus",
-    "displayName": "Climbables",
-    "description": "This module creates additional climbable blocks and placement modes for them.",
-    "dependencies": [
-        {"id": "Inventory", "minVersion": "1.1.0"}
-    ],
-    "serverSideOnly": false,
-    "isAsset": true,
-    "isLibrary": true
+  "id": "Climbables",
+  "version": "1.1.0-SNAPSHOT",
+  "author": "anthodeus",
+  "displayName": "Climbables",
+  "description": "This module creates additional climbable blocks and placement modes for them.",
+  "dependencies": [
+    {
+      "id": "Inventory",
+      "minVersion": "1.1.0"
+    }
+  ],
+  "serverSideOnly": false,
+  "isAsset": true,
+  "isLibrary": true
 }
