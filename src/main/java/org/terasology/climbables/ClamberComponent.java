@@ -15,9 +15,10 @@
  */
 package org.terasology.climbables;
 
+import org.joml.Vector3i;
+import org.joml.Vector3ic;
 import org.terasology.entitySystem.Component;
 import org.terasology.math.Side;
-import org.terasology.math.geom.Vector3i;
 
 public class ClamberComponent implements Component {
 
@@ -25,15 +26,15 @@ public class ClamberComponent implements Component {
     public boolean support = false;
     public int maxPlacementDistance = 3;
 
-    public Vector3i getPlacingModeDirection() {
+    public Vector3ic getPlacingModeDirection() {
         switch (this.placingMode) {
             case ROPING:
-                return Side.BOTTOM.getVector3i();
+                return Side.BOTTOM.direction();
             case STACKING:
-                return Side.TOP.getVector3i();
+                return Side.TOP.direction();
             case NORMAL:
-                return Vector3i.zero();
+            default:
+                return new Vector3i(0, 0, 0);
         }
-        return Vector3i.zero();
     }
 }
