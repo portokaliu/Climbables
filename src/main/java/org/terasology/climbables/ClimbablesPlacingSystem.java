@@ -16,6 +16,8 @@
 
 package org.terasology.climbables;
 
+import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.terasology.audio.AudioManager;
 import org.terasology.audio.events.PlaySoundEvent;
 import org.terasology.entitySystem.entity.EntityRef;
@@ -31,9 +33,7 @@ import org.terasology.logic.inventory.InventoryManager;
 import org.terasology.logic.inventory.InventoryUtils;
 import org.terasology.logic.inventory.ItemComponent;
 import org.terasology.math.ChunkMath;
-import org.terasology.math.JomlUtil;
 import org.terasology.math.Side;
-import org.terasology.math.geom.Vector3i;
 import org.terasology.registry.In;
 import org.terasology.utilities.Assets;
 import org.terasology.world.BlockEntityRegistry;
@@ -42,6 +42,7 @@ import org.terasology.world.block.Block;
 import org.terasology.world.block.BlockComponent;
 import org.terasology.world.block.entity.placement.PlaceBlocks;
 import org.terasology.world.block.family.BlockFamily;
+import org.terasology.world.block.family.BlockPlacementData;
 import org.terasology.world.block.items.BlockItemComponent;
 import org.terasology.world.block.items.OnBlockItemPlaced;
 
@@ -61,7 +62,7 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
 
     @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
     public void onDestroyed(DoDestroyEvent event, EntityRef entity, ClamberComponent clamberComponent, BlockComponent blockComponent) {
-        Vector3i nextBlockPos = new Vector3i(blockComponent.getPosition());
+        Vector3i nextBlockPos = blockComponent.getPosition(new Vector3i());
         nextBlockPos.add(clamberComponent.getPlacingModeDirection());
 
         EntityRef nextBlockEntity = blockEntityRegistry.getBlockEntityAt(nextBlockPos);
@@ -93,11 +94,11 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
             return;
         }
 
-        Vector3i placementDirection = Vector3i.zero();
+        Vector3i placementDirection = new Vector3i();
         ClamberComponent targetClamberComponent = targetEntity.getComponent(ClamberComponent.class);
 
-        Vector3i climbablePlacementPos = new Vector3i(blockComponent.getPosition());
-        Block blockToPlace = type.getBlockForPlacement(climbablePlacementPos, Side.LEFT, secondaryDirection);
+        Vector3i climbablePlacementPos = blockComponent.getPosition(new Vector3i());
+        Block blockToPlace = type.getBlockForPlacement(new BlockPlacementData(climbablePlacementPos, Side.LEFT, new Vector3f(secondaryDirection.direction())));
         if (blockToPlace == null) {
             event.consume();
             return;
@@ -109,7 +110,7 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
                 event.consume();
                 return;
             } else {
-                placementDirection = placingClamberComponent.getPlacingModeDirection();
+                placementDirection.set(placingClamberComponent.getPlacingModeDirection());
             }
         } else {
             return;
@@ -135,11 +136,11 @@ public class ClimbablesPlacingSystem extends BaseComponentSystem {
         while (targetClamberComponent.placingMode == newBlockClamberComponent.placingMode && placementDistance < targetClamberComponent.maxPlacementDistance);
 
         if (newBlock.isReplacementAllowed()) {
-            PlaceBlocks placeBlocks = new PlaceBlocks(JomlUtil.from(climbablePlacementPos), blockToPlace, event.getInstigator());
+            PlaceBlocks placeBlocks = new PlaceBlocks(climbablePlacementPos, blockToPlace, event.getInstigator());
             worldProvider.getWorldEntity().send(placeBlocks);
 
             if (!placeBlocks.isConsumed()) {
-                item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos)));
+                item.send(new OnBlockItemPlaced(climbablePlacementPos, blockEntityRegistry.getBlockEntityAt(climbablePlacementPos), EntityRef.NULL));
             }
 
             event.getInstigator().send(new PlaySoundEvent(Assets.getSound("engine:PlaceBlock").get(), 0.5f));
